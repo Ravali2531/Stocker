@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869913618272",
+    "project_id": "stocker-fc72a",
+    "storage_bucket": "stocker-fc72a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869913618272:android:7099555866c8aa8f29e005",
+        "android_client_info": {
+          "package_name": "com.example.stocker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWn7UhO-YzOBRbyr4-EqLbhxVXC4G6bK8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,55 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "com.google.gms.google-services"  // Google Services plugin for Firebase
+    id "dev.flutter.flutter-gradle-plugin"  // Flutter Gradle plugin
+}
+
+android {
+    namespace "com.example.stocker"
+    compileSdk 34  // Ensure this matches your SDK version
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    defaultConfig {
+        applicationId "com.example.stocker"
+        minSdkVersion 23
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false      // Code shrinking disabled
+            shrinkResources false    // Disable resource shrinking
+            signingConfig signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    // Import the Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+
+    // Firebase dependencies
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth'
+
+    // Google Sign-In dependency
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+
+    // Kotlin standard library
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.21'
+}
