@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
+class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Text(
-          'Welcome to the Home Page!',
+          'Welcome to the Orders Page!',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
