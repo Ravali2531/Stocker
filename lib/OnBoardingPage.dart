@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stocker/HomePageWithNavBar.dart';
 import 'HomePage.dart';  // Import your HomePage
 import 'ProfilePage.dart';  // Import your Profile Setup Page
 
@@ -46,7 +47,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         // If the user profile exists, navigate to HomePage
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => HomePageWithNavBar()),
         );
       } else {
         // If the user profile doesn't exist, navigate to ProfilePage
