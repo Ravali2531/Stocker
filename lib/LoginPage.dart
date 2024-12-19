@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:stocker/OnBoardingPage.dart';
 import 'RegisterPage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -20,6 +21,10 @@ class _LoginPageState extends State<LoginPage> {
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login Successful')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => OnboardingPage()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
