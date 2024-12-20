@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -9,6 +10,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<Map<String, dynamic>> stocksData = [];
   final DatabaseReference databaseRef = FirebaseDatabase.instance.ref();
+  final CollectionReference watchlistRef =
+  FirebaseFirestore.instance.collection('watchlist');
 
   @override
   void initState() {
@@ -33,7 +36,8 @@ class _HomePageState extends State<HomePage> {
             if (value is Map<dynamic, dynamic> && value['timestamp'] != null) {
               DateTime currentTimestamp = DateTime.parse(value['timestamp']);
 
-              if (latestTimestamp == null || currentTimestamp.isAfter(latestTimestamp!)) {
+              if (latestTimestamp == null ||
+                  currentTimestamp.isAfter(latestTimestamp!)) {
                 latestTimestamp = currentTimestamp;
                 latestTimestampKey = key;
               }
@@ -66,6 +70,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> saveToWatchlist(Map<String, dynamic> stock) async {
+    try {
+      await watchlistRef.add(stock);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${stock['stockName']} added to watchlist')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding to watchlist: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,7 +99,8 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final stock = stocksData[index];
           final stockName = stock['stockName'];
-          final latestData = stock['latestData'] as Map<dynamic, dynamic>;
+          final latestData =
+          stock['latestData'] as Map<dynamic, dynamic>;
 
           return Card(
             margin: EdgeInsets.only(bottom: 16.0),
@@ -106,6 +124,13 @@ class _HomePageState extends State<HomePage> {
                   Text('High: ${latestData['high']}'),
                   Text('Low: ${latestData['low']}'),
                   Text('Volume: ${latestData['volume']}'),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      saveToWatchlist(stock);
+                    },
+                    child: Text('Save to Watchlist'),
+                  ),
                 ],
               ),
             ),
