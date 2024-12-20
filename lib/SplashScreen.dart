@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:stocker/LoginPage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'LoginPage.dart';
+import 'OnBoardingPage.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -12,10 +14,21 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     Future.delayed(Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()), // Replace with your BasePage
-      );
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // User is logged in, navigate to the onboarding page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => OnboardingPage()),
+        );
+      } else {
+        // No user logged in, navigate to the login page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      }
     });
   }
 
@@ -25,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          'assets/stocker.jpeg', // Stocker image path
+          'assets/stocker.jpeg', // Replace with your actual image path
           width: 200,
           height: 200,
         ),
