@@ -7,6 +7,10 @@ import 'LoginPage.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform, // Use platform-specific options
+  // );
   runApp(MyApp());
 }
 
