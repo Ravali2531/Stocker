@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -8,135 +8,219 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Map<String, dynamic>> stocksData = [];
-  final DatabaseReference databaseRef = FirebaseDatabase.instance.ref();
-  final CollectionReference watchlistRef =
-  FirebaseFirestore.instance.collection('watchlist');
+  final List<Stock> stocksData = [];
+  final List<Stock> filteredStocks = [];
+  final DatabaseReference databaseRef = FirebaseDatabase.instance.ref('historical_data');
+  final TextEditingController searchController = TextEditingController();
+  final User? user = FirebaseAuth.instance.currentUser; // Get the current user
+
+  late DatabaseReference watchlistRef;
 
   @override
   void initState() {
     super.initState();
+    if (user != null) {
+      watchlistRef = FirebaseDatabase.instance.ref('watchlist/${user!.uid}');
+    }
     fetchAllStocksData();
+    searchController.addListener(onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    searchController.removeListener(onSearchChanged);
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchAllStocksData() async {
     try {
-      final snapshot = await databaseRef.child('historical_data').get();
+      DatabaseEvent event = await databaseRef.once();
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
 
-      if (snapshot.exists) {
-        List<Map<String, dynamic>> fetchedStocksData = [];
-        Map<dynamic, dynamic>? data = snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        List<Stock> fetchedStocks = [];
 
-        data?.forEach((stockName, stockData) {
-          // Find the latest timestamp
-          String? latestTimestampKey;
-          DateTime? latestTimestamp;
+        data.forEach((stockName, stockEntries) {
+          if (stockEntries is Map<dynamic, dynamic>) {
+            List<String> dates = stockEntries.keys.cast<String>().toList()..sort();
+            String latestDate = dates.last;
+            Map<dynamic, dynamic> latestData = stockEntries[latestDate];
 
-          (stockData as Map<dynamic, dynamic>).forEach((key, value) {
-            if (value is Map<dynamic, dynamic> && value['timestamp'] != null) {
-              DateTime currentTimestamp = DateTime.parse(value['timestamp']);
-
-              if (latestTimestamp == null ||
-                  currentTimestamp.isAfter(latestTimestamp!)) {
-                latestTimestamp = currentTimestamp;
-                latestTimestampKey = key;
-              }
-            }
-          });
-
-          // Add the latest data to the fetched list
-          if (latestTimestampKey != null) {
-            fetchedStocksData.add({
-              'stockName': stockName,
-              'latestData': stockData[latestTimestampKey],
-            });
+            fetchedStocks.add(Stock(
+              symbol: latestData['Stock Name'] ?? stockName,
+              open: latestData['open']?.toDouble() ?? 0.0,
+              close: latestData['close']?.toDouble() ?? 0.0,
+              high: latestData['high']?.toDouble() ?? 0.0,
+              low: latestData['low']?.toDouble() ?? 0.0,
+              volume: latestData['volume']?.toInt() ?? 0,
+              timestamp: latestData['timestamp'] ?? '',
+            ));
           }
         });
 
-        // Update the state with the fetched data
         setState(() {
           stocksData.clear();
-          stocksData.addAll(fetchedStocksData);
+          stocksData.addAll(fetchedStocks);
+          filteredStocks.addAll(fetchedStocks);
         });
-
-        print('Fetched Stocks Data: $stocksData');
-      } else {
-        print('No data available');
       }
     } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  void onSearchChanged() {
+    setState(() {
+      String query = searchController.text.toLowerCase();
+      filteredStocks.clear();
+      filteredStocks.addAll(
+        stocksData.where((stock) => stock.symbol.toLowerCase().contains(query)),
+      );
+    });
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    onSearchChanged();
+  }
+
+  void addToWatchlist(Stock stock) {
+    if (user != null) {
+      watchlistRef.push().set({
+        'stockName': stock.symbol,
+        'open': stock.open,
+        'close': stock.close,
+        'high': stock.high,
+        'low': stock.low,
+        'volume': stock.volume,
+        'timestamp': stock.timestamp,
+      });
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching data: $e')),
+        SnackBar(content: Text('${stock.symbol} added to watchlist')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You need to be logged in to add to the watchlist')),
       );
     }
   }
 
-  Future<void> saveToWatchlist(Map<String, dynamic> stock) async {
-    try {
-      await watchlistRef.add(stock);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${stock['stockName']} added to watchlist')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding to watchlist: $e')),
-      );
-    }
+  void showStockDetails(Stock stock) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  stock.symbol,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () => addToWatchlist(stock),
+                ),
+              ],
+            ),
+            Text('Open: ${stock.open}'),
+            Text('Close: ${stock.close}'),
+            Text('High: ${stock.high}'),
+            Text('Low: ${stock.low}'),
+            Text('Volume: ${stock.volume}'),
+            Text('Timestamp: ${stock.timestamp}'),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: const Text('BUY'),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text('SELL'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Stocks Data'),
+        title: const Text('Stocks List'),
       ),
-      body: stocksData.isEmpty
-          ? Center(
-        child: CircularProgressIndicator(),
-      )
-          : ListView.builder(
-        padding: EdgeInsets.all(16.0),
-        itemCount: stocksData.length,
-        itemBuilder: (context, index) {
-          final stock = stocksData[index];
-          final stockName = stock['stockName'];
-          final latestData =
-          stock['latestData'] as Map<dynamic, dynamic>;
-
-          return Card(
-            margin: EdgeInsets.only(bottom: 16.0),
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Stock: $stockName',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text('Timestamp: ${latestData['timestamp']}'),
-                  Text('Open: ${latestData['open']}'),
-                  Text('Close: ${latestData['close']}'),
-                  Text('High: ${latestData['high']}'),
-                  Text('Low: ${latestData['low']}'),
-                  Text('Volume: ${latestData['volume']}'),
-                  SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () {
-                      saveToWatchlist(stock);
-                    },
-                    child: Text('Save to Watchlist'),
-                  ),
-                ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search & add',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: clearSearch,
+                )
+                    : null,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: filteredStocks.isEmpty
+                ? const Center(child: Text('No stocks found'))
+                : ListView.builder(
+              itemCount: filteredStocks.length,
+              itemBuilder: (context, index) {
+                final stock = filteredStocks[index];
+                return ListTile(
+                  onTap: () => showStockDetails(stock),
+                  title: Text(stock.symbol, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  subtitle: Text('Open: ${stock.open.toStringAsFixed(2)}'),
+                  trailing: Text('Close: ${stock.close.toStringAsFixed(2)}'),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class Stock {
+  final String symbol;
+  final double open;
+  final double close;
+  final double high;
+  final double low;
+  final int volume;
+  final String timestamp;
+
+  Stock({
+    required this.symbol,
+    required this.open,
+    required this.close,
+    required this.high,
+    required this.low,
+    required this.volume,
+    required this.timestamp,
+  });
 }

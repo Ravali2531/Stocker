@@ -20,7 +20,7 @@ class _HomePageWithNavBarState extends State<HomePageWithNavBar> {
     WatchlistPage(), // Watchlist page
     PortfolioPage(), // Portfolio page
     OrdersPage(), // Orders page
-    ProfileDetailsPage(), // Profile page
+    ProfilePage(), // Profile page
   ];
 
   void _onItemTapped(int index) {
