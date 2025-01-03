@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stocker/EditProfilePage.dart';
 import 'package:stocker/HomePageWithNavBar.dart';
 import 'HomePage.dart';  // Import your HomePage
 import 'ProfilePage.dart';  // Import your Profile Setup Page
@@ -16,8 +17,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<String> _images = [
     'assets/onboard.jpg', // Replace with your onboarding image paths
-    'assets/slide2.png',
-    'assets/slide3.png',
+    'assets/onboard.jpg',
+    'assets/onboard.jpg',
   ];
 
   final List<String> _titles = [
@@ -53,7 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         // If the user profile doesn't exist, navigate to ProfilePage
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ProfilePage()),
+          MaterialPageRoute(builder: (context) => EditProfilePage()),
         );
       }
     } else {

@@ -127,12 +127,13 @@ class _WatchlistPageState extends State<WatchlistPage> {
           ),
           Expanded(
             child: filteredStocks.isEmpty
-                ? const Center(
-              child: Text(
-                'No stocks found',
-                style: TextStyle(fontSize: 18),
-              ),
-            )
+            //     ? const Center(
+            //   child: Text(
+            //     'No stocks found',
+            //     style: TextStyle(fontSize: 18),
+            //   ),
+            // )
+              ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
               itemCount: filteredStocks.length,
               itemBuilder: (context, index) {

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:stocker/ResetPasswordPage.dart';
 import 'package:stocker/AccountClosurePage.dart';
 import 'package:stocker/LoginPage.dart';
+import 'package:stocker/EditProfilePage.dart'; // Import the EditProfilePage
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -59,6 +60,17 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EditProfilePage()),
+              );
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

@@ -185,7 +185,7 @@ class _HomePageState extends State<HomePage> {
           ),
           Expanded(
             child: filteredStocks.isEmpty
-                ? const Center(child: Text('No stocks found'))
+                ? const Center(child: CircularProgressIndicator()) //const Center(child: Text('No stocks found'))
                 : ListView.builder(
               itemCount: filteredStocks.length,
               itemBuilder: (context, index) {

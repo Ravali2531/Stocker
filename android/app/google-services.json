@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "869913618272",
+    "firebase_url": "https://stocker-fc72a-default-rtdb.firebaseio.com",
     "project_id": "stocker-fc72a",
     "storage_bucket": "stocker-fc72a.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.example.stocker"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "869913618272-svludepsg40b0j7a65mk462lt07md852.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDWn7UhO-YzOBRbyr4-EqLbhxVXC4G6bK8"
@@ -20,7 +26,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "869913618272-svludepsg40b0j7a65mk462lt07md852.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
