@@ -39,23 +39,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
   // Function to check if the user profile exists in Firestore
   Future<void> _onNextButtonPressed() async {
     User? user = _auth.currentUser;
+    print(user);
+
 
     if (user != null) {
       // Check if the user's document exists in the 'users' collection
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
-
-      if (userDoc.exists) {
-        // If the user profile exists, navigate to HomePage
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomePageWithNavBar()),
-        );
-      } else {
-        // If the user profile doesn't exist, navigate to ProfilePage
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => EditProfilePage()),
-        );
+      try {
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePageWithNavBar()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => EditProfilePage()),
+          );
+        }
+      } catch (e) {
+        print("Error fetching user document: $e");
       }
     } else {
       // If no user is logged in, navigate to ProfilePage (prompt for sign up)
@@ -143,7 +146,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onPressed: _onNextButtonPressed,
+              onPressed: () async {
+                print("Next button pressed");
+                await _onNextButtonPressed();
+                print("Navigation complete");
+              },
               child: Text(
                 'Next',
                 style: TextStyle(fontSize: 18, color: Colors.white),
