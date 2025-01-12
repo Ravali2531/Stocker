@@ -26,7 +26,6 @@ class ProfileDetailsPage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.edit),
             onPressed: () {
-              // Navigate to Edit Profile Page
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => EditProfilePage()),
@@ -45,48 +44,58 @@ class ProfileDetailsPage extends StatelessWidget {
             return Center(child: Text('No profile data found'));
           }
 
-          // Extracting user data from Firestore snapshot
           var userDoc = snapshot.data!;
-          String name = userDoc['name'] ?? 'No Name';
-          String email = userDoc['email'] ?? 'No Email';
-          String phone = userDoc['phone'] ?? 'No Phone Number';
-          String sin = userDoc['sin'] ?? 'No SIN';
-          String location = userDoc['location'] ?? 'No Location';
+          String phone = userDoc['phone'] ?? 'Not available';
+          String email = userDoc['email'] ?? 'Not available';
+          String sin = userDoc['sin'] ?? 'Not available';
+          String location = userDoc['location'] ?? 'Not available';
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Name: $name',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Email: $email',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Phone Number: $phone',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'SIN: $sin',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Location: $location',
-                  style: TextStyle(fontSize: 16),
-                ),
+                _buildDetailRow(Icons.phone, 'Phone', phone),
+                const Divider(),
+                _buildDetailRow(Icons.email, 'Email', email),
+                const Divider(),
+                _buildDetailRow(Icons.assignment, 'SIN', sin),
+                const Divider(),
+                _buildDetailRow(Icons.location_on, 'Location', location),
               ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String title, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 28, color: Colors.blue),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

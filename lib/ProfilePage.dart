@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:stocker/ResetPasswordPage.dart';
-import 'package:stocker/AccountClosurePage.dart';
-import 'package:stocker/LoginPage.dart';
-import 'package:stocker/EditProfilePage.dart'; // Import the EditProfilePage
+import 'ProfileDetailsPage.dart';
+import 'ResetPasswordPage.dart';
+import 'AccountClosurePage.dart';
+import 'LoginPage.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -59,138 +59,140 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => EditProfilePage()),
-              );
-            },
-          ),
-        ],
+        title: const Text('Account'),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : userData == null
           ? const Center(child: Text('No user data found'))
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Display User's Name and Initials
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.grey[300],
+                    child: Text(
+                      userData!['name'] != null
+                          ? userData!['name'][0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         userData!['name'] ?? 'User Name',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      Text(
-                        user?.uid ?? 'User ID',
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+                      SizedBox(height: 4),
+                      // Text(
+                      //   'CLIENT ID - ${user?.uid ?? 'N/A'}',
+                      //   style: const TextStyle(color: Colors.grey),
+                      // ),
                     ],
-                  ),
-                  CircleAvatar(
-                    radius: 30,
-                    child: Text(
-                      userData!['name'] != null
-                          ? userData!['name'][0].toUpperCase()
-                          : 'U',
-                      style: const TextStyle(fontSize: 24),
-                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Email
-              ListTile(
-                title: const Text('E-mail'),
-                subtitle: Text(userData!['email'] ?? 'Not available'),
+              _buildSectionItem(
+                context,
+                title: 'Personal Details',
+                subtitle: 'Mobile, Email, Address',
+                icon: Icons.person_outline,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfileDetailsPage(),
+                    ),
+                  );
+                },
               ),
-              const Divider(),
-
-              // Phone
-              ListTile(
-                title: const Text('Phone'),
-                subtitle: Text(userData!['phone'] ?? 'Not available'),
+              _buildSectionItem(
+                context,
+                title: 'Bank Accounts',
+                subtitle: 'Add, Edit or Delete Bank details',
+                icon: Icons.account_balance,
+                onTap: () {},
               ),
-              const Divider(),
-
-              // SIN
-              ListTile(
-                title: const Text('SIN'),
-                subtitle: Text(userData!['sin'] ?? 'Not available'),
+              // _buildSectionItem(
+              //   context,
+              //   title: 'Manage Segment',
+              //   subtitle: 'Equity, FnO, Currency, Commodity',
+              //   icon: Icons.settings,
+              //   onTap: () {},
+              // ),
+              // _buildSectionItem(
+              //   context,
+              //   title: 'Nominee',
+              //   subtitle: 'Update Nominee Details',
+              //   icon: Icons.person_add_alt_1,
+              //   onTap: () {},
+              // ),
+              _buildSectionItem(
+                context,
+                title: 'Password & Security',
+                subtitle: 'Change your password',
+                icon: Icons.lock_outline,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+                  );
+                },
               ),
-              const Divider(),
-
-              // Location
-              ListTile(
-                title: const Text('Location'),
-                subtitle: Text(userData!['location'] ?? 'Not available'),
+              _buildSectionItem(
+                context,
+                title: 'Account Closure',
+                subtitle: 'Account closure is permanent and irreversible',
+                icon: Icons.close,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AccountClosurePage()),
+                  );
+                },
               ),
-              const Divider(),
-
-              // Password & Security
-              ListTile(
-                title: const Text('Password & Security'),
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ResetPasswordPage()),
-                    );
-                  },
-                  child: const Text('Manage', style: TextStyle(color: Colors.blue)),
-                ),
-              ),
-              const Divider(),
-
-              // Account Closure
-              ListTile(
-                title: const Text('Account Closure'),
-                subtitle: const Text('Account closure is permanent and irreversible.'),
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AccountClosurePage()),
-                    );
-                  },
-                  child: const Text('Continue', style: TextStyle(color: Colors.blue)),
-                ),
-              ),
-              const Divider(),
-
-              // Log Out Button
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
+              const SizedBox(height: 30),
+              Center(
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[400],
-                    padding: const EdgeInsets.all(16),
-                  ),
                   onPressed: logout,
-                  child: const Text(
-                    'Log Out',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  child: const Text('Log Out'),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionItem(BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(icon, color: Colors.blue),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(subtitle),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: onTap,
+        ),
+        const Divider(),
+      ],
     );
   }
 }
