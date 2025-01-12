@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+import 'StockDetailPage.dart';
+import 'Stock.dart';
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -10,19 +13,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<Stock> stocksData = [];
   final List<Stock> filteredStocks = [];
-  final DatabaseReference databaseRef = FirebaseDatabase.instance.ref('historical_data');
   final TextEditingController searchController = TextEditingController();
-  final User? user = FirebaseAuth.instance.currentUser; // Get the current user
-
-  late DatabaseReference watchlistRef;
 
   @override
   void initState() {
     super.initState();
-    if (user != null) {
-      watchlistRef = FirebaseDatabase.instance.ref('watchlist/${user!.uid}');
-    }
-    fetchAllStocksData();
+    fetchStockData();
     searchController.addListener(onSearchChanged);
   }
 
@@ -33,37 +29,32 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> fetchAllStocksData() async {
+  Future<void> fetchStockData() async {
+    const String apiKey = 'PYWqXHmLwwGxgwOdUxtEhZBzRDlJdZhF';
+    const String apiUrl = 'https://financialmodelingprep.com/api/v3/quote/AAPL,GOOG,MSFT?apikey=$apiKey';
+
     try {
-      DatabaseEvent event = await databaseRef.once();
-      final data = event.snapshot.value as Map<dynamic, dynamic>?;
-
-      if (data != null) {
-        List<Stock> fetchedStocks = [];
-
-        data.forEach((stockName, stockEntries) {
-          if (stockEntries is Map<dynamic, dynamic>) {
-            List<String> dates = stockEntries.keys.cast<String>().toList()..sort();
-            String latestDate = dates.last;
-            Map<dynamic, dynamic> latestData = stockEntries[latestDate];
-
-            fetchedStocks.add(Stock(
-              symbol: latestData['Stock Name'] ?? stockName,
-              open: latestData['open']?.toDouble() ?? 0.0,
-              close: latestData['close']?.toDouble() ?? 0.0,
-              high: latestData['high']?.toDouble() ?? 0.0,
-              low: latestData['low']?.toDouble() ?? 0.0,
-              volume: latestData['volume']?.toInt() ?? 0,
-              timestamp: latestData['timestamp'] ?? '',
-            ));
-          }
-        });
-
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
         setState(() {
           stocksData.clear();
-          stocksData.addAll(fetchedStocks);
-          filteredStocks.addAll(fetchedStocks);
+          filteredStocks.clear();
+          for (var stock in data) {
+            stocksData.add(Stock(
+              symbol: stock['symbol'] ?? '',
+              price: stock['price']?.toDouble() ?? 0.0,
+              change: stock['change']?.toDouble() ?? 0.0,
+              changePercentage: stock['changesPercentage']?.toDouble() ?? 0.0,
+              marketCap: stock['marketCap']?.toDouble() ?? 0.0,
+              volume: stock['volume']?.toDouble() ?? 0.0,
+              rank: stock['rank'] ?? 0,
+            ));
+          }
+          filteredStocks.addAll(stocksData);
         });
+      } else {
+        throw Exception('Failed to load stock data');
       }
     } catch (e) {
       print('Error fetching data: $e');
@@ -85,75 +76,11 @@ class _HomePageState extends State<HomePage> {
     onSearchChanged();
   }
 
-  void addToWatchlist(Stock stock) {
-    if (user != null) {
-      watchlistRef.push().set({
-        'stockName': stock.symbol,
-        'open': stock.open,
-        'close': stock.close,
-        'high': stock.high,
-        'low': stock.low,
-        'volume': stock.volume,
-        'timestamp': stock.timestamp,
-      });
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${stock.symbol} added to watchlist')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You need to be logged in to add to the watchlist')),
-      );
-    }
-  }
-
   void showStockDetails(Stock stock) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  stock.symbol,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => addToWatchlist(stock),
-                ),
-              ],
-            ),
-            Text('Open: ${stock.open}'),
-            Text('Close: ${stock.close}'),
-            Text('High: ${stock.high}'),
-            Text('Low: ${stock.low}'),
-            Text('Volume: ${stock.volume}'),
-            Text('Timestamp: ${stock.timestamp}'),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: const Text('BUY'),
-                ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text('SELL'),
-                ),
-              ],
-            ),
-          ],
-        ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StockDetailPage(stock: stock),
       ),
     );
   }
@@ -161,7 +88,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
         title: const Text('Stocks List'),
       ),
       body: Column(
@@ -185,16 +114,44 @@ class _HomePageState extends State<HomePage> {
           ),
           Expanded(
             child: filteredStocks.isEmpty
-                ? const Center(child: CircularProgressIndicator()) //const Center(child: Text('No stocks found'))
+                ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
               itemCount: filteredStocks.length,
               itemBuilder: (context, index) {
                 final stock = filteredStocks[index];
-                return ListTile(
-                  onTap: () => showStockDetails(stock),
-                  title: Text(stock.symbol, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: Text('Open: ${stock.open.toStringAsFixed(2)}'),
-                  trailing: Text('Close: ${stock.close.toStringAsFixed(2)}'),
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  child: ListTile(
+                    title: Text(
+                      stock.symbol,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Price: ${stock.price.toStringAsFixed(2)}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${stock.change.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: stock.change >= 0 ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${stock.changePercentage.toStringAsFixed(2)}%',
+                          style: TextStyle(
+                            color: stock.changePercentage >= 0 ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () => showStockDetails(stock),
+                  ),
                 );
               },
             ),
@@ -205,22 +162,3 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class Stock {
-  final String symbol;
-  final double open;
-  final double close;
-  final double high;
-  final double low;
-  final int volume;
-  final String timestamp;
-
-  Stock({
-    required this.symbol,
-    required this.open,
-    required this.close,
-    required this.high,
-    required this.low,
-    required this.volume,
-    required this.timestamp,
-  });
-}
