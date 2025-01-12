@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:stocker/OnBoardingPage.dart';
 import 'RegisterPage.dart';
 
@@ -50,6 +51,39 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(content: Text(error.toString())),
       );
     });
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In Successful')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => OnboardingPage()),
+      );
+    } catch (e) {
+      print('Google Sign-In Error: $e'); // Detailed error logging
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In Failed: $e')),
+      );
+    }
   }
 
   @override
@@ -128,9 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                     backgroundColor: Colors.white,
                     side: BorderSide(color: Colors.grey),
                   ),
-                  onPressed: () {
-                    // Add Google Sign-In logic if needed
-                  },
+                  onPressed: _signInWithGoogle,
                   icon: Image.asset(
                     'assets/google_logo.png',
                     height: 24,

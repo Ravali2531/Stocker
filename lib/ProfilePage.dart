@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'HomePage.dart'; // Import HomePage
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stocker/ResetPasswordPage.dart';
+import 'package:stocker/AccountClosurePage.dart';
+import 'package:stocker/LoginPage.dart';
+import 'package:stocker/EditProfilePage.dart'; // Import the EditProfilePage
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -9,134 +12,179 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final _formKey = GlobalKey<FormState>();
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _sinController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
 
-  Future<void> _saveUserDetails() async {
-    if (!_formKey.currentState!.validate()) return;
-
+  Future<void> fetchUserData() async {
     try {
-      User? user = _auth.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not logged in.')),
-        );
-        return;
+      if (user != null) {
+        DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+
+        if (snapshot.exists) {
+          setState(() {
+            userData = snapshot.data();
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            isLoading = false;
+          });
+        }
       }
-
-      // Save data to Firestore
-      await _firestore.collection('users').doc(user.uid).set({
-        'email': user.email,
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'location': _locationController.text.trim(),
-        'sin': _sinController.text.trim(),
-      });
-
-      // Navigate to HomePage after saving details
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile saved successfully!')),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      print('Error fetching user data: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
+  }
+
+  void logout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Complete Your Profile'),
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EditProfilePage()),
+              );
+            },
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : userData == null
+          ? const Center(child: Text('No user data found'))
+          : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Tell us about yourself',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              // Display User's Name and Initials
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userData!['name'] ?? 'User Name',
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        user?.uid ?? 'User ID',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  CircleAvatar(
+                    radius: 30,
+                    child: Text(
+                      userData!['name'] != null
+                          ? userData!['name'][0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Full Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
+              const SizedBox(height: 20),
+
+              // Email
+              ListTile(
+                title: const Text('E-mail'),
+                subtitle: Text(userData!['email'] ?? 'Not available'),
               ),
-              SizedBox(height: 15),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  prefix: Text('+'),
+              const Divider(),
+
+              // Phone
+              ListTile(
+                title: const Text('Phone'),
+                subtitle: Text(userData!['phone'] ?? 'Not available'),
+              ),
+              const Divider(),
+
+              // SIN
+              ListTile(
+                title: const Text('SIN'),
+                subtitle: Text(userData!['sin'] ?? 'Not available'),
+              ),
+              const Divider(),
+
+              // Location
+              ListTile(
+                title: const Text('Location'),
+                subtitle: Text(userData!['location'] ?? 'Not available'),
+              ),
+              const Divider(),
+
+              // Password & Security
+              ListTile(
+                title: const Text('Password & Security'),
+                trailing: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+                    );
+                  },
+                  child: const Text('Manage', style: TextStyle(color: Colors.blue)),
                 ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
               ),
-              SizedBox(height: 15),
-              TextFormField(
-                controller: _locationController,
-                decoration: InputDecoration(labelText: 'Location'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your location';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 15),
-              TextFormField(
-                controller: _sinController,
-                decoration: InputDecoration(labelText: 'SIN (Social Insurance Number)'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your SIN';
-                  }
-                  if (!RegExp(r'^\d{9}$').hasMatch(value)) {
-                    return 'Please enter a valid 9-digit SIN';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                  backgroundColor: Colors.blue,
+              const Divider(),
+
+              // Account Closure
+              ListTile(
+                title: const Text('Account Closure'),
+                subtitle: const Text('Account closure is permanent and irreversible.'),
+                trailing: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AccountClosurePage()),
+                    );
+                  },
+                  child: const Text('Continue', style: TextStyle(color: Colors.blue)),
                 ),
-                onPressed: _saveUserDetails,
-                child: Text(
-                  'Save and Continue',
-                  style: TextStyle(color: Colors.white),
+              ),
+              const Divider(),
+
+              // Log Out Button
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[400],
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  onPressed: logout,
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
             ],

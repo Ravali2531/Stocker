@@ -39,7 +39,14 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _registerWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+      if (googleUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google Sign-In canceled')),
+        );
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -48,18 +55,20 @@ class _RegisterPageState extends State<RegisterPage> {
       await FirebaseAuth.instance.signInWithCredential(credential);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign-Up Successful')),
+        const SnackBar(content: Text('Google Sign-Up Successful')),
       );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
       );
     } catch (e) {
+      print('Google Sign-In Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text('Google Sign-In Failed: $e')),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

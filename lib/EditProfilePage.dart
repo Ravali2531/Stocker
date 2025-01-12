@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stocker/ProfilePage.dart';
+import 'HomePageWithNavBar.dart';
 
 class EditProfilePage extends StatefulWidget {
   @override
@@ -16,12 +18,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _sinController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
+  bool _isLoading = true;
+  bool _isFirstTime = false; // Track if the user data is being added for the first time
+
   // Fetch existing user profile details
   Future<void> _fetchProfileData() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc =
-      await _firestore.collection('users').doc(user.uid).get();
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
 
       if (userDoc.exists) {
         setState(() {
@@ -29,30 +33,51 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _phoneController.text = userDoc['phone'] ?? '';
           _sinController.text = userDoc['sin'] ?? '';
           _locationController.text = userDoc['location'] ?? '';
+          _isFirstTime = false; // Data exists, it's not the first time
         });
+      } else {
+        _isFirstTime = true; // No data exists, it's the first time
       }
     }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  // Update user profile details
+  // Update or add user profile details
   Future<void> _updateProfile() async {
     User? user = _auth.currentUser;
     if (user != null) {
-      await _firestore.collection('users').doc(user.uid).update({
-        'name': _nameController.text,
-        'phone': _phoneController.text,
-        'sin': _sinController.text,
-        'location': _locationController.text,
-      }).then((_) {
+      try {
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': _nameController.text,
+          'phone': _phoneController.text,
+          'sin': _sinController.text,
+          'location': _locationController.text,
+          'email': user.email, // Store the user's email
+        }, SetOptions(merge: true)); // Merges with existing data if present
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully!')),
+          const SnackBar(content: Text('Profile updated successfully!')),
         );
-        Navigator.pop(context); // Go back to ProfileDetailsPage
-      }).catchError((error) {
+
+        // Navigate based on whether it's the first time adding data
+        if (_isFirstTime) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePageWithNavBar()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfilePage()),
+          );
+        }
+      } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to update profile: $error')),
         );
-      });
+      }
     }
   }
 
@@ -66,37 +91,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile'),
+        title: const Text('Edit Profile'),
       ),
-      body: Padding(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Name'),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _phoneController,
-              decoration: InputDecoration(labelText: 'Phone Number'),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _sinController,
-              decoration: InputDecoration(labelText: 'SIN'),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _locationController,
-              decoration: InputDecoration(labelText: 'Location'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _updateProfile,
-              child: Text('Save Changes'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Phone Number'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _sinController,
+                decoration: const InputDecoration(labelText: 'SIN'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _locationController,
+                decoration: const InputDecoration(labelText: 'Location'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _updateProfile,
+                child: const Text('Save Changes'),
+              ),
+            ],
+          ),
         ),
       ),
     );
