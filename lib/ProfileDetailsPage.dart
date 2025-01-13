@@ -52,17 +52,19 @@ class ProfileDetailsPage extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailRow(Icons.phone, 'Phone', phone),
-                const Divider(),
-                _buildDetailRow(Icons.email, 'Email', email),
-                const Divider(),
-                _buildDetailRow(Icons.assignment, 'SIN', sin),
-                const Divider(),
-                _buildDetailRow(Icons.location_on, 'Location', location),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDetailRow(Icons.phone, 'Phone', phone),
+                  const Divider(),
+                  _buildDetailRow(Icons.email, 'Email', email),
+                  const Divider(),
+                  _buildDetailRow(Icons.assignment, 'SIN', sin),
+                  const Divider(),
+                  _buildDetailRow(Icons.location_on, 'Location', location),
+                ],
+              ),
             ),
           );
         },
@@ -72,28 +74,31 @@ class ProfileDetailsPage extends StatelessWidget {
 
   Widget _buildDetailRow(IconData icon, String title, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 28, color: Colors.blue),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

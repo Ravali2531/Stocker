@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'Stock.dart';
 
 class WatchlistPage extends StatefulWidget {
   @override
@@ -42,18 +43,7 @@ class _WatchlistPageState extends State<WatchlistPage> {
 
         data.forEach((key, value) {
           final stock = value as Map<dynamic, dynamic>;
-          fetchedStocks.add(
-            Stock(
-              key: key,
-              symbol: stock['stockName'] ?? 'N/A',
-              open: stock['open']?.toDouble() ?? 0.0,
-              close: stock['close']?.toDouble() ?? 0.0,
-              high: stock['high']?.toDouble() ?? 0.0,
-              low: stock['low']?.toDouble() ?? 0.0,
-              volume: stock['volume']?.toInt() ?? 0,
-              timestamp: stock['timestamp'] ?? 'N/A',
-            ),
-          );
+          fetchedStocks.add(Stock.fromMap(key, stock));
         });
 
         setState(() {
@@ -127,13 +117,7 @@ class _WatchlistPageState extends State<WatchlistPage> {
           ),
           Expanded(
             child: filteredStocks.isEmpty
-            //     ? const Center(
-            //   child: Text(
-            //     'No stocks found',
-            //     style: TextStyle(fontSize: 18),
-            //   ),
-            // )
-              ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: Text('No stocks found'))
                 : ListView.builder(
               itemCount: filteredStocks.length,
               itemBuilder: (context, index) {
@@ -149,16 +133,10 @@ class _WatchlistPageState extends State<WatchlistPage> {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                    subtitle: Text('Open: ${stock.open.toStringAsFixed(2)}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Close: ${stock.close.toStringAsFixed(2)}'),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => removeFromWatchlist(stock.key),
-                        ),
-                      ],
+                    subtitle: Text('Price: \$${stock.price.toStringAsFixed(2)}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => removeFromWatchlist(stock.key),
                     ),
                   ),
                 );
@@ -169,26 +147,4 @@ class _WatchlistPageState extends State<WatchlistPage> {
       ),
     );
   }
-}
-
-class Stock {
-  final String key;
-  final String symbol;
-  final double open;
-  final double close;
-  final double high;
-  final double low;
-  final int volume;
-  final String timestamp;
-
-  Stock({
-    required this.key,
-    required this.symbol,
-    required this.open,
-    required this.close,
-    required this.high,
-    required this.low,
-    required this.volume,
-    required this.timestamp,
-  });
 }

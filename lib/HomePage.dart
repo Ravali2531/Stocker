@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'StockDetailPage.dart';
 import 'Stock.dart';
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -29,9 +28,11 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // Fetch stock data from the API
   Future<void> fetchStockData() async {
     const String apiKey = 'PYWqXHmLwwGxgwOdUxtEhZBzRDlJdZhF';
-    const String apiUrl = 'https://financialmodelingprep.com/api/v3/quote/AAPL,GOOG,MSFT?apikey=$apiKey';
+    const String apiUrl =
+        'https://financialmodelingprep.com/api/v3/quote/AAPL,GOOG,MSFT?apikey=$apiKey';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -42,6 +43,7 @@ class _HomePageState extends State<HomePage> {
           filteredStocks.clear();
           for (var stock in data) {
             stocksData.add(Stock(
+              key: stock['symbol'],
               symbol: stock['symbol'] ?? '',
               price: stock['price']?.toDouble() ?? 0.0,
               change: stock['change']?.toDouble() ?? 0.0,
@@ -49,6 +51,11 @@ class _HomePageState extends State<HomePage> {
               marketCap: stock['marketCap']?.toDouble() ?? 0.0,
               volume: stock['volume']?.toDouble() ?? 0.0,
               rank: stock['rank'] ?? 0,
+              open: 0.0,
+              close: 0.0,
+              high: 0.0,
+              low: 0.0,
+              timestamp: '',
             ));
           }
           filteredStocks.addAll(stocksData);
@@ -61,6 +68,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Search functionality
   void onSearchChanged() {
     setState(() {
       String query = searchController.text.toLowerCase();
@@ -71,11 +79,13 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Clear the search input
   void clearSearch() {
     searchController.clear();
     onSearchChanged();
   }
 
+  // Navigate to the StockDetailPage
   void showStockDetails(Stock stock) {
     Navigator.push(
       context,
@@ -88,9 +98,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
         title: const Text('Stocks List'),
       ),
       body: Column(
@@ -108,7 +116,9 @@ class _HomePageState extends State<HomePage> {
                   onPressed: clearSearch,
                 )
                     : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -121,14 +131,16 @@ class _HomePageState extends State<HomePage> {
                 final stock = filteredStocks[index];
                 return Card(
                   elevation: 3,
-                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  margin: const EdgeInsets.symmetric(
+                      vertical: 6, horizontal: 12),
                   child: ListTile(
                     title: Text(
                       stock.symbol,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      'Price: ${stock.price.toStringAsFixed(2)}',
+                      'Price: \$${stock.price.toStringAsFixed(2)}',
                       style: const TextStyle(color: Colors.grey),
                     ),
                     trailing: Column(
@@ -138,14 +150,18 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           '${stock.change.toStringAsFixed(2)}',
                           style: TextStyle(
-                            color: stock.change >= 0 ? Colors.green : Colors.red,
+                            color: stock.change >= 0
+                                ? Colors.green
+                                : Colors.red,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           '${stock.changePercentage.toStringAsFixed(2)}%',
                           style: TextStyle(
-                            color: stock.changePercentage >= 0 ? Colors.green : Colors.red,
+                            color: stock.changePercentage >= 0
+                                ? Colors.green
+                                : Colors.red,
                           ),
                         ),
                       ],
@@ -161,4 +177,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

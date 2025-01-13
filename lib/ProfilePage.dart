@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stocker/BankAccountPage.dart';
 import 'ProfileDetailsPage.dart';
 import 'ResetPasswordPage.dart';
 import 'AccountClosurePage.dart';
@@ -122,7 +123,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: 'Bank Accounts',
                 subtitle: 'Add, Edit or Delete Bank details',
                 icon: Icons.account_balance,
-                onTap: () {},
+                onTap: () {Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BankAccountPage(),
+                  ),
+                );},
               ),
               // _buildSectionItem(
               //   context,
