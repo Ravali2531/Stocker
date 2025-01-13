@@ -112,7 +112,30 @@ class _StockDetailPageState extends State<StockDetailPage> {
 
     String apiKey = 'PYWqXHmLwwGxgwOdUxtEhZBzRDlJdZhF';
     String symbol = widget.stock.symbol;
-    String apiUrl = 'https://financialmodelingprep.com/api/v3/historical-chart/5min/$symbol?apikey=$apiKey';
+    String apiUrl;
+
+    switch (selectedPeriod) {
+      case '1D':
+        apiUrl = 'https://financialmodelingprep.com/api/v3/historical-chart/1min/$symbol?apikey=$apiKey';
+        break;
+      case '5D':
+        apiUrl = 'https://financialmodelingprep.com/api/v3/historical-chart/5min/$symbol?apikey=$apiKey';
+        break;
+      case '1M':
+        DateTime today = DateTime.now();
+        DateTime thirtyDaysAgo = today.subtract(Duration(days: 30));
+        apiUrl =
+        'https://financialmodelingprep.com/api/v3/historical-price-full/$symbol?from=${DateFormat('yyyy-MM-dd').format(thirtyDaysAgo)}&to=${DateFormat('yyyy-MM-dd').format(today)}&apikey=$apiKey';
+        break;
+      case '1Y':
+        DateTime today = DateTime.now();
+        DateTime oneYearAgo = today.subtract(Duration(days: 365));
+        apiUrl =
+        'https://financialmodelingprep.com/api/v3/historical-price-full/$symbol?from=${DateFormat('yyyy-MM-dd').format(oneYearAgo)}&to=${DateFormat('yyyy-MM-dd').format(today)}&apikey=$apiKey';
+        break;
+      default:
+        apiUrl = '';
+    }
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -123,7 +146,11 @@ class _StockDetailPageState extends State<StockDetailPage> {
           chartData.clear();
 
           if (data != null && data.isNotEmpty) {
-            chartData = data.map<FlSpot>((entry) {
+            List<dynamic> historicalData = selectedPeriod == '1D' || selectedPeriod == '5D'
+                ? data
+                : data['historical'] ?? [];
+
+            chartData = historicalData.map<FlSpot>((entry) {
               double close = entry['close'].toDouble();
               DateTime date = DateTime.parse(entry['date']);
               return FlSpot(date.millisecondsSinceEpoch.toDouble(), close);
@@ -187,13 +214,37 @@ class _StockDetailPageState extends State<StockDetailPage> {
       body: isLoading
           ? Center(child: CircularProgressIndicator(color: Colors.pink))
           : hasError
-          ? Center(child: Text('Failed to load data. Please try again.', style: TextStyle(color: Colors.red, fontSize: 18)))
+          ? Center(
+        child: Text(
+          'Failed to load data. Please try again.',
+          style: TextStyle(color: Colors.red, fontSize: 18),
+        ),
+      )
           : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Filter Dropdown
+              DropdownButton<String>(
+                value: selectedPeriod,
+                items: ['1D', '5D', '1M', '1Y']
+                    .map((period) => DropdownMenuItem<String>(
+                  value: period,
+                  child: Text(period, style: TextStyle(color: Colors.white)),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedPeriod = value!;
+                    fetchChartData();
+                  });
+                },
+                dropdownColor: Colors.black,
+              ),
+              SizedBox(height: 20),
+
               // Chart Section
               Container(
                 height: 300,
