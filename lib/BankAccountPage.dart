@@ -20,16 +20,13 @@ class _BankAccountPageState extends State<BankAccountPage> {
   @override
   void initState() {
     super.initState();
-
-    // Stripe initialization
-    Stripe.instance.applySettings().then((_) {
-      debugPrint("Stripe initialized");
-    });
-
+    // Initialize Stripe
+    Stripe.instance.applySettings();
+    // Fetch user balance from Firebase
     _fetchBalance();
   }
 
-  // Fetch user balance from Firebase
+  // ✅ Fetch user balance from Firebase
   Future<void> _fetchBalance() async {
     User? user = _auth.currentUser;
     if (user == null) return;
@@ -37,7 +34,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
     final snapshot = await _databaseRef.child('users/${user.uid}/balance').get();
     if (snapshot.value != null) {
       setState(() {
-        _balance = snapshot.value as double;
+        _balance = (snapshot.value as num).toDouble();
       });
     }
     setState(() {
@@ -45,13 +42,13 @@ class _BankAccountPageState extends State<BankAccountPage> {
     });
   }
 
-  // Add funds using the Stripe Payment Sheet
+  // ✅ Add funds using Stripe
   Future<void> _addFunds(double amount) async {
     try {
-      // Step 1: Create a payment intent using your backend
+      // Step 1: Create payment intent on backend
       final clientSecret = await _createPaymentIntent(amount);
 
-      // Step 2: Initialize the payment sheet
+      // Step 2: Initialize Stripe payment sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -59,10 +56,10 @@ class _BankAccountPageState extends State<BankAccountPage> {
         ),
       );
 
-      // Step 3: Present the payment sheet
+      // Step 3: Present payment sheet
       await Stripe.instance.presentPaymentSheet();
 
-      // Step 4: Update the balance in Firebase and the UI
+      // Step 4: Update balance in Firebase
       User? user = _auth.currentUser;
       if (user != null) {
         final newBalance = _balance + amount;
@@ -72,6 +69,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
           _balance = newBalance;
         });
 
+        // Success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Funds added successfully!')),
         );
@@ -90,7 +88,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
     }
   }
 
-  // Create a payment intent using your backend
+  // ✅ Create a payment intent on your backend
   Future<String> _createPaymentIntent(double amount) async {
     final response = await http.post(
       Uri.parse('http://192.168.2.47:3000/create-payment-intent'),
@@ -109,7 +107,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
     }
   }
 
-  // Show a dialog to enter the amount to add
+  // ✅ Show a dialog to enter the amount to add
   void _showAddFundsDialog() {
     double enteredAmount = 0.0;
 
@@ -151,6 +149,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
     );
   }
 
+  // ✅ UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +161,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Balance: \$${_balance.toStringAsFixed(2)}',
@@ -169,7 +169,10 @@ class _BankAccountPageState extends State<BankAccountPage> {
             ),
             const SizedBox(height: 20),
             _balance == 0.0
-                ? Text('No funds available, add funds!')
+                ? Text(
+              'No funds available, add funds!',
+              style: TextStyle(color: Colors.red),
+            )
                 : SizedBox.shrink(),
             const SizedBox(height: 20),
             ElevatedButton(

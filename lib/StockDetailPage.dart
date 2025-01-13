@@ -226,7 +226,6 @@ class _StockDetailPageState extends State<StockDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Filter Dropdown
               DropdownButton<String>(
                 value: selectedPeriod,
                 items: ['1D', '5D', '1M', '1Y']
@@ -244,12 +243,13 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 dropdownColor: Colors.black,
               ),
               SizedBox(height: 20),
-
-              // Chart Section
               Container(
                 height: 300,
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 child: LineChart(
                   LineChartData(
+                    minY: chartData.isEmpty ? 0 : chartData.map((e) => e.y).reduce((a, b) => a < b ? a : b),
+                    maxY: chartData.isEmpty ? 0 : chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b),
                     lineBarsData: [
                       LineChartBarData(
                         spots: chartData,
@@ -258,20 +258,23 @@ class _StockDetailPageState extends State<StockDetailPage> {
                         barWidth: 4,
                       ),
                     ],
-                    titlesData: FlTitlesData(show: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: SideTitles(
+                        showTitles: true,
+                        interval: ((chartData.isNotEmpty ? chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b) : 1) / 4),
+                        getTitles: (value) => '\$${value.toStringAsFixed(2)}',
+                        getTextStyles: (value) => TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: true),
                     gridData: FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
                   ),
                 ),
               ),
               SizedBox(height: 20),
-
-              // Overview Section
               Text('Overview', style: TextStyle(color: Colors.pink, fontSize: 32, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               _buildStockDetailGrid(),
-
-              // Description Section
               SizedBox(height: 20),
               Text('Description', style: TextStyle(color: Colors.pink, fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
@@ -290,8 +293,10 @@ class _StockDetailPageState extends State<StockDetailPage> {
                           : description.split(' ').take(40).join(' ') + '...',
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
-                    Text(showFullDescription ? 'Show less' : 'Read more..',
-                        style: TextStyle(color: Colors.pink, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      showFullDescription ? 'Show less' : 'Read more..',
+                      style: TextStyle(color: Colors.pink, fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ),
@@ -330,11 +335,18 @@ class _StockDetailPageState extends State<StockDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: Colors.white70, fontSize: 14)),
+          Text(
+            title,
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
           SizedBox(height: 8),
-          Text(value, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 }
+
