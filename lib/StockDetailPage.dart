@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -16,6 +17,8 @@ class StockDetailPage extends StatefulWidget {
 }
 
 class _StockDetailPageState extends State<StockDetailPage> {
+  List<FlSpot> chartData = [];
+  String selectedPeriod = '1D';
   String description = '';
   bool showFullDescription = false;
   bool isLoading = false;
@@ -37,6 +40,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
     _watchlistRef = FirebaseDatabase.instance.ref('watchlist/${_auth.currentUser?.uid ?? ''}');
     checkIfInWatchlist();
     fetchStockDetails();
+    fetchChartData();
     fetchStockDescription();
   }
 
@@ -100,6 +104,49 @@ class _StockDetailPageState extends State<StockDetailPage> {
     }
   }
 
+  Future<void> fetchChartData() async {
+    setState(() {
+      isLoading = true;
+      hasError = false;
+    });
+
+    String apiKey = 'PYWqXHmLwwGxgwOdUxtEhZBzRDlJdZhF';
+    String symbol = widget.stock.symbol;
+    String apiUrl = 'https://financialmodelingprep.com/api/v3/historical-chart/5min/$symbol?apikey=$apiKey';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          chartData.clear();
+
+          if (data != null && data.isNotEmpty) {
+            chartData = data.map<FlSpot>((entry) {
+              double close = entry['close'].toDouble();
+              DateTime date = DateTime.parse(entry['date']);
+              return FlSpot(date.millisecondsSinceEpoch.toDouble(), close);
+            }).toList();
+          } else {
+            hasError = true;
+          }
+        });
+      } else {
+        throw Exception('Failed to load chart data');
+      }
+    } catch (e) {
+      print('Error fetching chart data: $e');
+      setState(() {
+        hasError = true;
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   Future<void> fetchStockDescription() async {
     String apiKey = 'PYWqXHmLwwGxgwOdUxtEhZBzRDlJdZhF';
     String symbol = widget.stock.symbol;
@@ -140,32 +187,42 @@ class _StockDetailPageState extends State<StockDetailPage> {
       body: isLoading
           ? Center(child: CircularProgressIndicator(color: Colors.pink))
           : hasError
-          ? Center(
-        child: Text(
-          'Failed to load data. Please try again.',
-          style: TextStyle(color: Colors.red, fontSize: 18),
-        ),
-      )
+          ? Center(child: Text('Failed to load data. Please try again.', style: TextStyle(color: Colors.red, fontSize: 18)))
           : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 📄 Overview Section
-              Text(
-                'Overview',
-                style: TextStyle(color: Colors.pink, fontSize: 32, fontWeight: FontWeight.bold),
+              // Chart Section
+              Container(
+                height: 300,
+                child: LineChart(
+                  LineChartData(
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: chartData,
+                        isCurved: true,
+                        colors: [Colors.pink],
+                        barWidth: 4,
+                      ),
+                    ],
+                    titlesData: FlTitlesData(show: false),
+                    gridData: FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                  ),
+                ),
               ),
+              SizedBox(height: 20),
+
+              // Overview Section
+              Text('Overview', style: TextStyle(color: Colors.pink, fontSize: 32, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               _buildStockDetailGrid(),
 
+              // Description Section
               SizedBox(height: 20),
-              // 📖 Description Section
-              Text(
-                'Description',
-                style: TextStyle(color: Colors.pink, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+              Text('Description', style: TextStyle(color: Colors.pink, fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               GestureDetector(
                 onTap: () {
@@ -182,10 +239,8 @@ class _StockDetailPageState extends State<StockDetailPage> {
                           : description.split(' ').take(40).join(' ') + '...',
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
-                    Text(
-                      showFullDescription ? 'Show less' : 'Read more..',
-                      style: TextStyle(color: Colors.pink, fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                    Text(showFullDescription ? 'Show less' : 'Read more..',
+                        style: TextStyle(color: Colors.pink, fontSize: 16, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -224,15 +279,9 @@ class _StockDetailPageState extends State<StockDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
+          Text(title, style: TextStyle(color: Colors.white70, fontSize: 14)),
           SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          Text(value, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
     );
