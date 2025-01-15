@@ -17,8 +17,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<String> _images = [
     'assets/onboard.jpg', // Replace with your onboarding image paths
-    'assets/onboard.jpg',
-    'assets/onboard.jpg',
+    'assets/onboard2.jpg',
+    'assets/onboard3.jpg',
   ];
 
   final List<String> _titles = [

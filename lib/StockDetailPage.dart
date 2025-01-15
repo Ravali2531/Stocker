@@ -197,13 +197,13 @@ class _StockDetailPageState extends State<StockDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(widget.stock.symbol, style: TextStyle(color: Colors.pink, fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(widget.stock.symbol, style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
             IconButton(
               icon: Icon(isInWatchlist ? Icons.favorite : Icons.favorite_border, color: Colors.pink),
               onPressed: toggleWatchlist,
@@ -212,7 +212,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
         ),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.pink))
+          ? Center(child: CircularProgressIndicator(color: Colors.blue))
           : hasError
           ? Center(
         child: Text(
@@ -231,7 +231,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 items: ['1D', '5D', '1M', '1Y']
                     .map((period) => DropdownMenuItem<String>(
                   value: period,
-                  child: Text(period, style: TextStyle(color: Colors.white)),
+                  child: Text(period, style: TextStyle(color: Colors.black)),
                 ))
                     .toList(),
                 onChanged: (value) {
@@ -240,7 +240,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
                     fetchChartData();
                   });
                 },
-                dropdownColor: Colors.black,
+                dropdownColor: Colors.white,
               ),
               SizedBox(height: 20),
               Container(
@@ -272,11 +272,11 @@ class _StockDetailPageState extends State<StockDetailPage> {
                 ),
               ),
               SizedBox(height: 20),
-              Text('Overview', style: TextStyle(color: Colors.pink, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text('Overview', style: TextStyle(color: Colors.black, fontSize: 32, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               _buildStockDetailGrid(),
               SizedBox(height: 20),
-              Text('Description', style: TextStyle(color: Colors.pink, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Description', style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               GestureDetector(
                 onTap: () {
@@ -291,11 +291,11 @@ class _StockDetailPageState extends State<StockDetailPage> {
                       showFullDescription
                           ? description
                           : description.split(' ').take(40).join(' ') + '...',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                      style: TextStyle(color: Colors.black, fontSize: 16),
                     ),
                     Text(
                       showFullDescription ? 'Show less' : 'Read more..',
-                      style: TextStyle(color: Colors.pink, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -328,7 +328,7 @@ class _StockDetailPageState extends State<StockDetailPage> {
     return Container(
       width: (MediaQuery.of(context).size.width / 2) - 24,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: EdgeInsets.all(12),
@@ -337,12 +337,12 @@ class _StockDetailPageState extends State<StockDetailPage> {
         children: [
           Text(
             title,
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+            style: TextStyle(color: Colors.black, fontSize: 14),
           ),
           SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),

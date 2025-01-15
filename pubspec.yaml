@@ -42,6 +42,7 @@ dependencies:
   google_place: any
   geolocator: any
   flutter_stripe: ^9.4.0
+  flutter_local_notifications: any
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -75,6 +76,8 @@ flutter:
     - assets/google_logo.png
     - assets/stocker.jpeg
     - assets/onboard.jpg
+    - assets/onboard2.jpg
+    - assets/onboard3.jpg
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
