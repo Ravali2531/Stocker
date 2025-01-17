@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:stocker/ProfileDetailsPage.dart';
-import 'HomePage.dart'; // Replace with your actual page names
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'HomePage.dart';
 import 'PortfolioPage.dart';
 import 'WatchListPage.dart';
 import 'OrdersPage.dart';
 import 'ProfilePage.dart';
+import 'Stock.dart';
 
 class HomePageWithNavBar extends StatefulWidget {
   @override
@@ -14,14 +15,45 @@ class HomePageWithNavBar extends StatefulWidget {
 
 class _HomePageWithNavBarState extends State<HomePageWithNavBar> {
   int _selectedIndex = 0;
+  double balance = 0.0;
+  final List<Stock> portfolio = [];
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late DatabaseReference _userRef;
 
-  final List<Widget> _pages = [
-    HomePage(), // Home page
-    WatchlistPage(), // Watchlist page
-    PortfolioPage(), // Portfolio page
-    OrdersPage(), // Orders page
-    ProfilePage(), // Profile page
-  ];
+  @override
+  void initState() {
+    super.initState();
+    final userId = _auth.currentUser?.uid;
+    _userRef = FirebaseDatabase.instance.ref('users/$userId');
+    fetchInitialData();
+  }
+
+  Future<void> fetchInitialData() async {
+    try {
+      // Fetch balance
+      final balanceSnapshot = await _userRef.child('balance').get();
+      if (balanceSnapshot.exists) {
+        setState(() {
+          balance = double.parse(balanceSnapshot.value.toString());
+        });
+      }
+
+      // Fetch portfolio
+      final portfolioSnapshot = await _userRef.child('portfolio').get();
+      if (portfolioSnapshot.exists) {
+        setState(() {
+          final data = Map<String, dynamic>.from(portfolioSnapshot.value as Map);
+          portfolio.clear();
+          data.forEach((symbol, stockData) {
+            final stock = Stock.fromMap(symbol, stockData);
+            portfolio.add(stock);
+          });
+        });
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -31,20 +63,28 @@ class _HomePageWithNavBarState extends State<HomePageWithNavBar> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomePage(),
+      WatchlistPage(),
+      PortfolioPage(),
+      OrdersPage(),
+      ProfilePage(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Stock App"),
       ),
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: Colors.lightBlue[50], // Light blue background
-        selectedItemColor: Colors.blue, // Blue color for selected item
-        unselectedItemColor: Colors.grey, // Grey for unselected items
+        backgroundColor: Colors.lightBlue[50],
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
         selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal),
-        type: BottomNavigationBarType.fixed, // Keeps the icons aligned
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),

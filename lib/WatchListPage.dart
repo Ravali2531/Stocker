@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'Stock.dart';
+import 'StockDetailPage.dart';
 
 class WatchlistPage extends StatefulWidget {
   @override
@@ -46,6 +49,9 @@ class _WatchlistPageState extends State<WatchlistPage> {
           fetchedStocks.add(Stock.fromMap(key, stock));
         });
 
+        // Fetch the latest prices for the stocks
+        await fetchStockPrices(fetchedStocks);
+
         setState(() {
           watchlistStocks = fetchedStocks;
           filteredStocks = List.from(fetchedStocks);
@@ -53,6 +59,27 @@ class _WatchlistPageState extends State<WatchlistPage> {
       }
     } catch (e) {
       print('Error fetching watchlist data: $e');
+    }
+  }
+
+  Future<void> fetchStockPrices(List<Stock> stocks) async {
+    const apiKey = 'S4ts5DZG3QleS272pmnx1fQKJ8mVZvYn';
+    for (int i = 0; i < stocks.length; i++) {
+      final apiUrl =
+          'https://financialmodelingprep.com/api/v3/quote/${stocks[i].symbol}?apikey=$apiKey';
+      try {
+        final response = await http.get(Uri.parse(apiUrl));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data.isNotEmpty) {
+            stocks[i] = stocks[i].copyWith(
+              price: data[0]['price']?.toDouble() ?? 0.0,
+            );
+          }
+        }
+      } catch (e) {
+        print('Error fetching price for ${stocks[i].symbol}: $e');
+      }
     }
   }
 
@@ -133,11 +160,21 @@ class _WatchlistPageState extends State<WatchlistPage> {
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 18),
                     ),
-                    subtitle: Text('Price: \$${stock.price.toStringAsFixed(2)}'),
+                    subtitle: Text(
+                        'Price: \$${stock.price.toStringAsFixed(2)}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () => removeFromWatchlist(stock.key),
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StockDetailPage(stock: stock),
+                        ),
+                      );
+                    },
                   ),
                 );
               },

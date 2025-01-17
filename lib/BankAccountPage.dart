@@ -269,7 +269,7 @@ class _BankAccountPageState extends State<BankAccountPage> {
 
   Future<String> _createPaymentIntent(double amount) async {
     final response = await http.post(
-      Uri.parse('http://192.168.2.12:3000/create-payment-intent'),
+      Uri.parse('http://192.168.2.47:3000/create-payment-intent'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'amount': (amount * 100).toInt(),
